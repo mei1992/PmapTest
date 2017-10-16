@@ -16,10 +16,10 @@ export function createMeasureMarker() {
 }
 
 //添加point标注标记
-export function createPointMarker() {
+export function createPointMarker(type) {
   var el = document.createElement('div');
   el.id = 'close_marker';
-  el.style["background-image"] = "url(\'../../static/images/point.png\')";
+  el.style["background-image"] = type===1 ? "url(\'../../static/images/point.png\')" : "url(\'../../static/images/pos_icon.png\')";
   el.style["background-size"] = "cover";
   el.style.width = "30px";
   el.style.height = "30px";

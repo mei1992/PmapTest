@@ -97,7 +97,6 @@
          token: '25cc55a69ea7422182d00d6b7c0ffa93',
          solution: '2356',
          style: '2356'
-
          }],
          selectItem: {
          image: './static/images/ztt1.png',

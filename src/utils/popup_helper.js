@@ -66,3 +66,26 @@ export function createPopupDom(title,input_name,input_content,confirm,cancel) {
   return div;
 }
 
+export function createPoiMarker(name,addr) {
+  var div = document.createElement('div')
+  div.className = 'poi_marker'
+  div.style.width = 'auto'
+
+  var p_name = document.createElement('span')
+  p_name.innerText = name
+
+  div.appendChild(p_name)
+
+  if(addr){
+    var space = document.createElement('br')
+    div.appendChild(space)
+
+    var p_addr = document.createElement('span')
+    p_addr.innerText = addr
+
+    div.appendChild(p_addr)
+  }
+
+  return div;
+}
+

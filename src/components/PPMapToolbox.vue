@@ -28,7 +28,7 @@
     </div>
     <div class="toolbox-container">
       <ul class="toolbox clearfix shadow-border">
-        <li class="pre-icon city right-border"><span>北京市<i class="drop-icon"></i></span></li>
+        <li class="pre-icon city right-border"><span @click="locateResponse">{{cur_city.cname}}<i class="drop-icon"></i></span></li>
         <li :class="[isTrafficShow?'active':'','pre-icon','traffic','right-border']" @click="trafficResponse"
             :title="lk_title_toggle"><span>路况</span></li>
         <li class="pre-icon tool">
@@ -54,7 +54,7 @@
       <div class="city-box shadow-border hidden">
         城市切换
       </div>
-      <div class="traffic-box shadow-border clearfix" v-if="trafficDesc&!hasLogin&!isToolShow">
+      <div class="traffic-box shadow-border clearfix" v-if="trafficDesc&!hasLogin">
         <ul class="fl-list clearfix">
           <li><span>更新时间: </span><span>{{nowDate}}</span><span class="update-icon" title="更新"
                                                                @click="updateTraffic"></span></li>
@@ -68,7 +68,7 @@
       </div>
     </div>
 
-
+    <PPMapLocation v-if="locationShow"></PPMapLocation>
   </div>
 </template>
 
@@ -77,8 +77,12 @@
   import {mapGetters, mapActions, mapState} from 'vuex'
   import eventBridge from '../globals/eventBridge'
   import ToolboxController from '../controller/toolbox_controller'
+  import PPMapLocation from './PPMapLocation.vue'
   export default {
     name: 'PPMapToolbox',
+    components: {
+      PPMapLocation
+    },
     data () {
       return {
         hasLogin: false,
@@ -89,13 +93,25 @@
         trafficDesc: true,    //路况描述显示
         isToolShow: false,    //工具框显示
         nowDate: '',         //当前时间
+        locationShow: false,
+        cityName:'北京市',
       }
     },
     mounted(){
       this.controller = new ToolboxController(this);
       this.nowDate = this.getNowFormatDate();
+      this.$nextTick(function(){
+          let _this = this;
+          eventBridge.$on('closeLocation',function(){
+            _this.locationShow=false;
+          })
+      });
+      eventBridge.$on('changeCity', function (city) {
+        this.cityName = city.cname;
+      });
     },
     computed: {
+      ...mapGetters(['cur_city']),
       lk_title_toggle: function () {
         switch (this.isTrafficShow) {
           case true:
@@ -111,8 +127,11 @@
       }
     },
     methods: {
+      ...mapActions(['updateCurCity']),
+
       userCenterResponse(){
         this.isToolShow = false;
+        this.locationShow = false;
         let user = JSON.parse(localStorage.getItem("user"));
         if (user) {
           this.hasLogin = !this.hasLogin;
@@ -133,7 +152,8 @@
       trafficResponse(){
         this.isTrafficShow = this.trafficDesc ? false : true;
         this.trafficDesc = this.trafficDesc ? false : true;
-        eventBridge.$emit('trafficResponse', this.isTrafficShow)
+        this.isToolShow = false;
+        eventBridge.$emit('trafficResponse', this.isTrafficShow);
       },
 
       //获取系统时间
@@ -159,10 +179,12 @@
       /*工具响应*/
       tooloptResponse(){
         this.hasLogin = false;  //隐藏用户框
+        this.trafficDesc = false;
+        this.locationShow = false;
         this.isToolShow = !this.isToolShow;
-        if (this.isToolShow) {
-          eventBridge.$emit('measure')
-        }
+        /*if (this.isToolShow) {
+          eventBridge.$emit('measure');
+        }*/
       },
 
       /*测距*/
@@ -192,24 +214,31 @@
       //标注与收藏
       markerResponse(type){
         eventBridge.$emit('markerBoxShow');
-        eventBridge.$emit('markerType',type);
+        eventBridge.$emit('markerType', type);
         /*var searchWrap = document.getElementById("ui3-search-wrap");
-        var info = document.getElementsByClassName("info-box clearfix");
-        info[0].style.display = "none";
-        searchWrap.style.display = "none";
-        eventBridge.$emit('markerType',type);
-        eventBridge.$emit('cleanPoint');
-        this.updateMarkerShow(true);
-        this.updateMarkerType(type);
-        this.updateActiveClick(false);*/
+         var info = document.getElementsByClassName("info-box clearfix");
+         info[0].style.display = "none";
+         searchWrap.style.display = "none";
+         eventBridge.$emit('markerType',type);
+         eventBridge.$emit('cleanPoint');
+         this.updateMarkerShow(true);
+         this.updateMarkerType(type);
+         this.updateActiveClick(false);*/
       },
+
+      locateResponse(){
+        this.locationShow = !this.locationShow;
+        if (this.locationShow) this.trafficDesc = false;
+
+      }
     }
   }
 </script>
 
 <style scoped>
   .app-top-right {
-
+    position: relative;
+    right: 20px;
   }
 
   .user-center, .toolbox-container {
@@ -520,4 +549,5 @@
     background-image: url("../../static/images/logout_icon_hover.png");
     color: #3b81ff;
   }
+
 </style>

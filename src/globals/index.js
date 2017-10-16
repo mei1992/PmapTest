@@ -28,6 +28,15 @@ export const STYLE_PRE_URL = SERVICE_ADDRESS + 'solu/style/id/';
  export const STYLE_PRE_URL = SERVICE_ADDRESS + 'solu/style/id/';
  */
 
+export const CUR_CITY_INFO = {
+  "code": "110000",
+  "cname": "北京市",
+  "ename": "Beijing City",
+  "pyname": "Bei Jing Shi",
+  "lon": "116.40717",
+  "lat": "39.90469"
+};
+
 export const MAP_SPRITE_URL = APP_DOMAIN_ROOT + '/minemapapi/v1.3/sprite/sprite';
 export const MAP_FONTS_URL = APP_DOMAIN_ROOT + '/minemapapi/v1.3/fonts';
 
@@ -58,4 +67,6 @@ export const DELETEMARKER_DATA_URL = ppmapServiceAddress + 'deleteMarker';
 
 /*********************** vuex状态设置 start *******************************/
 export const UPDATE_CUR_SOLUTION = 'UPDATE_CUR_SOLUTION';    //更新当前配图solution
+export const UPDATE_CUR_CITY = 'UPDATE_CUR_CITY';    //更新当前城市信息
+export const UPDATE_CUR_TOKEN = 'UPDATE_CUR_TOKEN';    //当前token
 /*********************** vuex状态设置 end *******************************/
