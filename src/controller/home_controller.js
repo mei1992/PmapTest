@@ -75,33 +75,10 @@ class HomeController {
             this._view.map.setLayoutProperty(item.id, 'visibility', 'none');
           }
         });
-        console.log(response);
+        //console.log(response);
       }, response => {
         // error callback
       });
-    /*$.ajax({
-     url: preStyle + '?token=' + globals.MAP_ACCESS_TOKEN,
-     //url: 'http://minedata.cn/service/solu/' + that.cur_solution + '?token=' + globals.MAP_ACCESS_TOKEN,
-     dataType: "json",
-     success: function (data) {
-     if (data.data.rows[0].layers) {
-     let arr = data.data.rows[0].layers
-     let idarr = []
-     for (let i = 0; i < arr.length; i++) {
-     let content = JSON.parse(arr[i].content || '{}')
-     if (content['source'] === 'Traffic' && content['source-layer'] === 'Trafficrtic') {
-     that.trafficArr.push(arr[i].id)
-     that.map.setLayoutProperty(arr[i].id, 'visibility', 'none');
-     }
-     }
-     }
-     },
-     error: function (XMLHttpRequest, textStatus, errorThrown) {
-     console.log(XMLHttpRequest)
-     console.log(textStatus)
-     console.log(errorThrown)
-     }
-     });*/
   }
 
   //显示路况
@@ -136,8 +113,102 @@ class HomeController {
       {emulateJSON: true})
       .then((response) => {
           response = response.body;
-          console.log(response);
+          //console.log(response);
         });
+  }
+
+  //规划路径
+  routePlan(_this_,index,startPoi,endPoi){
+    let start_lngLat = startPoi.geom ? startPoi.geom.coordinates : startPoi.coordinates;
+    let end_lngLat = endPoi.geom ? endPoi.geom.coordinates : endPoi.coordinates;
+
+    this._view.$http.get(globals.SERVICE_ADDRESS + "route/driving?&token=5f00971168e04aa1b299a4da98fe57d9&sPoint= "
+      + [start_lngLat[0],start_lngLat[1]] + "&ePoint=" + [end_lngLat[0],end_lngLat[1]] + "&shpFlag=10487&costModel=37&numAlt=1&source=37&traffic=1")
+      .then(response => {
+        let routeData = response.body.data;
+        _this_.rows = routeData.rows[index];
+        _this_.totalSignal = _this_.rows.signal;
+        _this_.segmts = routeData.rows[index].segmt;
+        for (var i = 0; i < _this_.segmts.length; i++) {
+          if (_this_.segmts[i].roadName && _this_.roadNames.length < 3) {
+            if (_this_.roadNames.indexOf(_this_.segmts[i].roadName[1]) === -1) {
+              _this_.roadNames.push(_this_.segmts[i].roadName[1])
+            }
+          }
+        }
+        let time = Math.ceil(_this_.rows.duration.duration / 60);
+        let hour = parseInt(time / 60);
+        let minut = time - (hour * 60);
+        if (time >= 60) {
+          _this_.totalTime = hour + '小时' + minut + '分钟'
+        } else {
+          _this_.totalTime = time + '分钟'
+        }
+
+        _this_.totalDist = _this_.rows.distsum.dist;
+        var len = _this_.rows.segmt.length - 1;
+        var coordinatesArr = [{
+          type: 'Feature',
+          geometry: _this_.rows.segmt[0].clist.geometry,
+          properties: {
+            color: '#5298FF'
+          }
+        }, {
+          type: 'Feature',
+          geometry: _this_.rows.segmt[len].clist.geometry,
+          properties: {
+            color: '#5298FF'
+          }
+        }];
+        for (var j = 1; j < len; j++) {
+          coordinatesArr.push({
+            type: 'Feature',
+            geometry: _this_.rows.segmt[j].clist.geometry,
+            properties: {
+              color: function () {
+                var traffic = _this_.rows.segmt[j].clisttraffic.features[0].properties.traffic;
+                if (traffic == 1) {
+                  return '#17bf00';
+                } else if (traffic == 2) {
+                  return '#ff9f19'
+                } else {
+                  return '#f23030'
+                }
+              }()
+            }
+          })
+
+        }
+        if (this._view.map.getSource("lineSource")) {
+          this._view.map.removeLayer('lines');
+          this._view.map.removeSource('lineSource');
+        }
+        this._view.map.addSource("lineSource", {
+          "type": "geojson",
+          'data': {
+            type: 'FeatureCollection',
+            features: coordinatesArr
+          }
+        });
+        this._view.map.addLayer({
+          "id": "lines",
+          "type": "line",
+          "source": "lineSource",
+          "layout": {
+            "line-join": "round",
+            "line-cap": "round"
+          },
+          "paint": {
+            'line-width': 6,
+            'line-color': {
+              'type': 'identity',
+              'property': 'color'
+            }
+          }
+        });
+      });
+    _this_.routeShow = true;
+
   }
 
 }

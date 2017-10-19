@@ -66,7 +66,7 @@ export function createPopupDom(title,input_name,input_content,confirm,cancel) {
   return div;
 }
 
-export function createPoiMarker(name,addr) {
+export function createMarkerTip(name,addr) {
   var div = document.createElement('div')
   div.className = 'poi_marker'
   div.style.width = 'auto'
@@ -88,4 +88,27 @@ export function createPoiMarker(name,addr) {
 
   return div;
 }
+
+export function createPoiMarker() {
+  var el = document.createElement('div');
+  el.id = 'marker';
+  el.className = "marker";
+  el.style.width = "21px";
+  el.style.height = "33px";
+  el.style.position = "absolute";
+  el.style.width = "30px";
+  el.style.height = "33px";
+  el.style.cursor = "pointer";
+
+  el.onmouseover = function () {
+    el.className="hoverMarker minemap-marker"
+  };
+  el.onmouseout = function () {
+    el.className="marker minemap-marker"
+  };
+
+  return el;
+}
+
+
 

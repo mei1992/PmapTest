@@ -3,30 +3,23 @@
  */
 
 export const SERVICE_ADDRESS = 'http://minedata.cn/service/'
-
 export const ppmapServiceAddress =  'http://182.254.228.149:18989/ppmapService/service/'    //开发用
-
 export const APP_DOMAIN_ROOT = 'http://minedata.cn'
 
 export const MAP_SOLUTION = 3498;
 export const MAP_ACCESS_TOKEN = '62d44474da2a47249fe065a1ac504e55';
 export const MAP_STYLE_URL = '3498';
-
 export const STYLE_PRE_URL = SERVICE_ADDRESS + 'solu/style/id/';
 
-/*export const SERVICE_ADDRESS = 'http://10.2.67.33/service/'    //本地部署修改
 
+/*export const SERVICE_ADDRESS = 'http://10.2.67.33/service/'    //本地部署修改  --  公安一所
  let ppmapServiceAddress = 'http://10.2.67.33:9080/ppmapService/service/'          //本地部署修改
-
-
  export const APP_DOMAIN_ROOT = 'http://10.2.67.33'  // 本地部署的地址
-
  export const MAP_SOLUTION = 3614;                                       //本地部署
  export const MAP_ACCESS_TOKEN = 'e5b28c654d784ae3961e38e5e2760e9c';
  export const MAP_STYLE_URL = '3614';
 
- export const STYLE_PRE_URL = SERVICE_ADDRESS + 'solu/style/id/';
- */
+ export const STYLE_PRE_URL = SERVICE_ADDRESS + 'solu/style/id/';*/
 
 export const CUR_CITY_INFO = {
   "code": "110000",

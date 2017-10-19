@@ -15,7 +15,7 @@ export default new Vuex.Store({
   state: {
     cur_solution: globals.MAP_SOLUTION,   //当前配图的solution
     cur_city: globals.CUR_CITY_INFO,   //当前所在城市
-    hot_areas: null,   //当前所在城市
+    cur_token: globals.MAP_ACCESS_TOKEN  //当前token
   },
 
 // getters

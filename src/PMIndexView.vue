@@ -6,7 +6,7 @@
       </div>
       <!-- 搜索盒子 -->
       <div id="search">
-        <p-p-map-searchbox></p-p-map-searchbox>
+        <p-p-map-searchbox @loginShow="loginResponse"></p-p-map-searchbox>
       </div>
       <!-- 右边的工具栏 -->
       <div id="tool">

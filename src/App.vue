@@ -26,7 +26,7 @@
     height: 100%;
     font-family: Arial,Helvetica,SimSun,sans-serif;
     font-size: 14px;
-    /*font-size: 62.5%;*/
+    color: #666;
   }
   .big-font{
     font-size: 16px;

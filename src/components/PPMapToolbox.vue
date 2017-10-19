@@ -130,6 +130,9 @@
       ...mapActions(['updateCurCity']),
 
       userCenterResponse(){
+        eventBridge.$emit('suggestHide');
+        eventBridge.$emit('clickDisable');
+        eventBridge.$emit('cleanDraw');   //强制清除edit绘制痕迹
         this.isToolShow = false;
         this.locationShow = false;
         let user = JSON.parse(localStorage.getItem("user"));
@@ -146,10 +149,13 @@
       exitResponse(){
         localStorage.setItem("user", null);
         this.hasLogin = false;
+        eventBridge.$emit('userExit');
       },
 
       /*路况响应*/
       trafficResponse(){
+        eventBridge.$emit('suggestHide');
+        eventBridge.$emit('clickDisable');
         this.isTrafficShow = this.trafficDesc ? false : true;
         this.trafficDesc = this.trafficDesc ? false : true;
         this.isToolShow = false;
@@ -178,6 +184,8 @@
 
       /*工具响应*/
       tooloptResponse(){
+        eventBridge.$emit('suggestHide');
+        eventBridge.$emit('clickDisable');
         this.hasLogin = false;  //隐藏用户框
         this.trafficDesc = false;
         this.locationShow = false;
@@ -215,18 +223,11 @@
       markerResponse(type){
         eventBridge.$emit('markerBoxShow');
         eventBridge.$emit('markerType', type);
-        /*var searchWrap = document.getElementById("ui3-search-wrap");
-         var info = document.getElementsByClassName("info-box clearfix");
-         info[0].style.display = "none";
-         searchWrap.style.display = "none";
-         eventBridge.$emit('markerType',type);
-         eventBridge.$emit('cleanPoint');
-         this.updateMarkerShow(true);
-         this.updateMarkerType(type);
-         this.updateActiveClick(false);*/
       },
 
+      //城市切换响应
       locateResponse(){
+        eventBridge.$emit('suggestHide');
         this.locationShow = !this.locationShow;
         if (this.locationShow) this.trafficDesc = false;
 

@@ -25,16 +25,27 @@
         meaMarkerList: [],  //测距marker
         activeTool: '',      //激活状态的工具
         userId: '',
-        curPopup:null,
-        curMarker:null,
+        curPopup: null,
+        curMarker: null,
         editMarkerPopup: [],  //当前标注信息
         current_marker: {
           name: '',
           content: ''
         },
         cur_markerId: null,
-        poiPopupList:[],
-        cur_marker:null,
+        poiPopupList: [],
+        cur_marker: null,
+        poi_id: null,
+        poiMarkerList: [],    //poiList的marker
+        cur_poiMarker: null,   //当前定位到的poi marker
+        cur_poi: null,
+        startPoi: null,   //起点poi
+        endPoi: null,    //终点poi
+        start_marker: null,  //起点marker
+        end_marker: null,    //终点marker
+
+        is_click_active: false,   //是否激活地图点击事件
+
       }
     },
     mounted(){
@@ -45,10 +56,22 @@
         _this.controller.initMapEdit(null, null, null, 'minemap');
 
         //强制清除地图痕迹
-        eventBridge.$on('cleanPoint', function(){
+        eventBridge.$on('cleanPoint', function () {
           _this.clearAllMea();
           _this.map.removeMarkers();
           _this.edit.draw.deleteAll();
+        })
+
+        //强制清除edit痕迹
+        eventBridge.$on('cleanDraw', function () {
+          _this.clearAllMea();
+          _this.edit.draw.deleteAll();
+          if(_this.curPopup){
+            _this.curPopup.remove();
+          }
+          if(_this.curMarker){
+            _this.map.removeMarker(_this.curMarker);
+          }
         })
         //切换配图方案
         eventBridge.$on('selectedMapStyle', function (item) {
@@ -136,10 +159,10 @@
 
         //测距
         eventBridge.$on('measure', function () {
-          _this.edit.draw.deleteAll();
+          //_this.edit.draw.deleteAll();
           _this.edit.onBtnCtrlActive('line');
           _this.activeTool = 'measure';
-          if(_this.curMarker) _this.map.removeMarker(_this.curMarker);
+          if (_this.curMarker) _this.map.removeMarker(_this.curMarker);
         });
 
         //画点
@@ -191,7 +214,7 @@
               if (saveType === 2) {    // 判断是收藏
                 let name = curMarker.markerName;
                 let content = curMarker.markerContent;
-                var popBox = popup_helper.createPoiMarker(name, content);
+                var popBox = popup_helper.createMarkerTip(name, content);
                 popup = new minemap.Popup({
                   offset: [-2, -25],
                   closeOnClick: true,
@@ -232,13 +255,142 @@
             });
           }, 200)
         });
+
+        //点亮当前poi  -- 通过 切换marker/hoverMarker 的class切换marker图标
+        var lightTimer;
+        eventBridge.$on('lightPoi', function (item, index) {
+          clearTimeout(lightTimer);
+          lightTimer = setTimeout(function () {
+            let allMarkers = _this.map.getAllMarkers();
+            _this.mouse_poi_popup = [];
+            let curCoordinate = item.geom.coordinates;
+            let poiId = item.id;
+            if (!_this.poi_id || _this.poi_id !== poiId) {
+              _this.map.flyTo({
+                center: curCoordinate
+              });
+              allMarkers.map((item, index) => {
+                if (curCoordinate[0] === item._lngLat.lng && curCoordinate[1] === item._lngLat.lat) {
+                  allMarkers[index]._element.className = "hoverMarker minemap-marker"
+                } else {
+                  allMarkers[index]._element.className = "marker minemap-marker"
+                }
+              });
+            }
+          }, 150);
+        });
+
+        //添加poiMarker
+        eventBridge.$on("poiMarker", function (poiList) {
+          poiList.map((item) => {
+            let poiMarker = popup_helper.createPoiMarker();
+            let marker = new minemap.Marker(poiMarker, {offset: [-25, -25]})
+              .setLngLat([item.geom.coordinates[0], item.geom.coordinates[1]])
+              .addTo(_this.map);
+
+            _this.poiMarkerList.push(marker);
+
+            item.isCollected = false;
+          });
+        });
+
+        //分页切换
+        eventBridge.$on('updatePage', function () {
+          if (_this.poiMarkerList) {
+            _this.poiMarkerList.map((item) => {
+              _this.map.removeMarker(item);
+            })
+          }
+          if(_this.cur_poiMarker) _this.map.removeMarker(_this.cur_poiMarker);
+        });
+
+        //定位到当前poi
+        eventBridge.$on('getCurPoi', function (poi) {
+          let geom = poi.geom;
+          let pointIcon = marker_helper.createPointMarker(2);
+
+          let marker = new minemap.Marker(pointIcon, {offset: [-15, -26]})
+            .setLngLat(geom.coordinates)
+            .addTo(_this.map);
+          _this.cur_poiMarker = marker;
+        });
+
+        //设置起终点
+        eventBridge.$on('setStartEndPoint', function (that, index, poi, type) {
+          if(poi){
+            if (_this.cur_poiMarker) {
+              _this.map.removeMarker(_this.cur_poiMarker);
+            }
+            let coordinates = poi.geom ? poi.geom.coordinates :poi.coordinates;
+            let pointIcon = marker_helper.createStartEndMarker(type);
+
+            let marker = new minemap.Marker(pointIcon, {offset: [-15, -26]})
+              .setLngLat([coordinates[0], coordinates[1]]);
+            _this.map.addMarker(marker);
+            if (type === 'start') {
+              _this.start_marker = marker;
+              _this.startPoi = poi; //设置起终点poi
+            } else {
+              _this.end_marker = marker;
+              _this.endPoi = poi;
+            }
+            if (_this.endPoi && _this.startPoi) {
+              _this.controller.routePlan(that, index, _this.startPoi, _this.endPoi);
+            }
+          }
+        });
+
+        eventBridge.$on('changeRoutePlan', function (that, index) {
+          _this.controller.routePlan(that, index, _this.startPoi, _this.endPoi);
+        });
+
+        //切换起终点
+        eventBridge.$on('changeStartEnd',function(that){
+          let  temp = _this.startPoi;
+          _this.startPoi = _this.endPoi;
+          _this.endPoi = temp;
+          if(_this.start_marker) _this.map.removeMarker(_this.start_marker);
+          if(_this.end_marker) _this.map.removeMarker(_this.end_marker);
+          eventBridge.$emit('setStartEndPoint',that,0,_this.startPoi,'start')
+          eventBridge.$emit('setStartEndPoint',that,0,_this.endPoi,'end')
+        });
+
+        // 清除起终点marker
+        eventBridge.$on('cleanStartEnd', function (type) {
+          if (type === 'start') {
+            _this.map.removeMarker(_this.start_marker);
+          } else {
+            _this.map.removeMarker(_this.end_marker);
+          }
+        });
+        // 清除起终点痕迹
+        eventBridge.$on('resetRoute', function () {
+          _this.startPoi = null;
+          _this.endPoi = null;
+        });
+
+        //清除规划的路径line
+        eventBridge.$on('removeLine', function () {
+          if (_this.map.getLayer("lines")) {
+            _this.map.removeLayer('lines');
+            _this.map.removeSource('lineSource');
+          }
+        });
+
+        eventBridge.$on('clickActive', function () {
+          _this.is_click_active = true;
+        })
+        eventBridge.$on('clickDisabled', function () {
+          _this.is_click_active = false;
+        })
+
       })
     },
     computed: {
-      ...mapGetters(['cur_solution','cur_token','cur_city'])
+      ...mapGetters(['cur_solution', 'cur_token', 'cur_city'])
     },
     methods: {
-      ...mapActions(['updateCurSolution','updateCurToken','updateCurCity']),
+      ...mapActions(['updateCurSolution', 'updateCurToken', 'updateCurCity']),
 
       //注册edit绘图完成事件
       regEvent(obj){
@@ -440,28 +592,51 @@
                     .setLngLat([newLngLat[0], newLngLat[1]]);
                   _this.map.addMarker(marker);
                 }
-                eventBridge.$emit("updateMarker",_this.userId, _this.cur_markerId, markerType, markerGeom, name, desc)
+                eventBridge.$emit("updateMarker", _this.userId, _this.cur_markerId, markerType, markerGeom, name, desc)
                 marker_popup.remove();
                 _this.edit.clearHistoryRecords();
                 //_this.updateCurMarker(markerGeom);
               }
 
               function cancelFunc() {
-                if(_this.edit.getAllHistoryRecords().length<=1){
+                if (_this.edit.getAllHistoryRecords().length <= 1) {
                   _this.edit.onBtnCtrlActive('undo');  //取消当前编辑
-                }else{
+                } else {
                   _this.edit.draw.deleteAll();
                   let featureIds = _this.edit.draw.add(_this.cur_marker);
                 }
                 marker_popup.remove();
               }
 
-              marker_popup = new minemap.Popup({closeOnClick: false,closeButton: false}).setDOMContent(popBox).setLngLat([newLngLat[0], newLngLat[1]]).addTo(_this.map)
+              marker_popup = new minemap.Popup({
+                closeOnClick: false,
+                closeButton: false
+              }).setDOMContent(popBox).setLngLat([newLngLat[0], newLngLat[1]]).addTo(_this.map)
               _this.editMarkerPopup.push(marker_popup);
 
             }
           }, 500);
         });
+
+        obj.on('click', function (e) {
+          if (_this.is_click_active) {
+            var features = _this.map.queryRenderedFeatures(e.point);
+            if (features.length > 0 && features[0].properties.name_zh) {
+              let name = features[0].properties.name_zh;
+              let geom = features[0].geometry;
+              eventBridge.$emit('clickOnMap',name,geom)
+              //_this.mapClickResponse(name,geom);
+            }
+          }
+        });
+        /*obj.on('mousemove', function (e) {
+          if (_this.is_click_active) {
+            var features = _this.map.queryRenderedFeatures(e.point);
+            if(features.length > 0){
+              //console.log(e)
+            }
+          }
+        });*/
       },
 
       //点线面操作
@@ -470,8 +645,8 @@
         this.clearAllMea();         //清除测距
         this.edit.onBtnCtrlActive(type);
         this.activeTool = type;
-        if(this.curPopup) this.curPopup.remove();
-        if(this.curMarker) this.map.removeMarker(this.curMarker);
+        if (this.curPopup) this.curPopup.remove();
+        if (this.curMarker) this.map.removeMarker(this.curMarker);
       },
 
       //清除当前测距线内容
@@ -504,7 +679,7 @@
   }
 </script>
 
-<style scoped>
+<style>
   .map_home, #map {
     height: 100%;
   }
@@ -513,6 +688,40 @@
     position: absolute;
     left: 20px;
     bottom: 6px;
+    font-size: 12px;
   }
+
+  .endMarker {
+    background: url("../../static/images/markers-point.png");
+    background-position: -225px -138px;
+    position: absolute;
+    width: 25px;
+    height: 40px;
+    cursor: pointer;
+    background-repeat: no-repeat;
+  }
+
+  .startMarker {
+    background: url("../../static/images/markers-point.png");
+    background-position: -200px -138px;
+    position: absolute;
+    width: 25px;
+    height: 40px;
+    cursor: pointer;
+    background-repeat: no-repeat;
+  }
+
+  .hoverMarker {
+    background: url("../../static/images/pos_icon_hover.png") no-repeat center;
+  }
+
+  .marker {
+    background: url("../../static/images/pos_icon.png") no-repeat center;
+  }
+
+  .marker:hover {
+    background: url("../../static/images/pos_icon_hover.png") no-repeat center;
+  }
+
 
 </style>

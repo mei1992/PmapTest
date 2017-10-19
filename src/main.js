@@ -13,6 +13,16 @@ Vue.use(Vuex);
 Vue.use(VueResource);
 Vue.use(EasyScroll);   //优化滚动条插件
 
+Vue.directive('focus', {
+  // 当绑定元素插入到 DOM 中。
+  bind: function (el,value) {
+    // 聚焦元素
+    if(value){
+      el.focus();
+    }
+  }
+})
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
@@ -20,4 +30,4 @@ new Vue({
   router,
   template: '<App/>',
   components: { App }
-})
+});

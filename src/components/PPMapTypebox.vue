@@ -196,6 +196,7 @@
       },
       // 选择配图大图的响应
       selectedResponse (bool) {
+        eventBridge.$emit('clickDisable');
         this.is_typeList_show = bool === null ? !this.is_typeList_show : bool;
       }
     },
